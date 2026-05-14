@@ -290,6 +290,115 @@ export default function Dashboard() {
 
   return (
     <AppLayout>
+      <style jsx global>{`
+        .tabs { display: flex; gap: 4px; padding: 16px 24px 0; border-bottom: 1px solid #1e2030; overflow-x: auto; }
+        .tab { padding: 8px 16px; border-radius: 8px 8px 0 0; font-size: 13px; font-weight: 500; cursor: pointer; border: none; background: transparent; color: #64748b; transition: all 0.15s; white-space: nowrap; }
+        .tab:hover { color: #94a3b8; background: #1e2030; }
+        .tab.active { color: #e2e8f0; background: #1e2030; border-bottom: 2px solid #6366f1; }
+
+        .content { padding: 24px; max-width: 1200px; margin: 0 auto; }
+
+        .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+        .section-title { font-size: 16px; font-weight: 600; }
+        .section-count { font-size: 12px; color: #475569; background: #1e2030; padding: 3px 10px; border-radius: 999px; }
+
+        .news-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
+        .news-card { display: flex; flex-direction: column; background: #0d0d14; border: 1px solid #1e2030; border-radius: 12px; overflow: hidden; transition: border-color 0.15s, transform 0.15s; }
+        .news-card:hover { border-color: #6366f1; transform: translateY(-2px); }
+        .news-img { width: 100%; height: 160px; object-fit: cover; }
+        .news-body { padding: 14px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
+        .news-meta { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+        .badge { font-size: 11px; padding: 2px 8px; border-radius: 999px; background: #1e2030; color: #94a3b8; }
+        .badge.ticker { background: #1e1b4b; color: #818cf8; }
+        .news-time { font-size: 11px; color: #475569; margin-left: auto; }
+        .news-title { font-size: 14px; font-weight: 600; line-height: 1.4; color: #e2e8f0; }
+        .news-summary { font-size: 12px; color: #64748b; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .stock-mini-info { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin-top: 10px; padding-top: 10px; border-top: 1px solid #1e2030; }
+        .mini-price { font-size: 16px; font-weight: 700; color: #e2e8f0; }
+        .mini-consensus { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 999px; text-transform: uppercase; }
+        .mini-consensus.consensus-strong-buy, .mini-consensus.consensus-buy { background: #16a34a; color: #fff; }
+        .mini-consensus.consensus-hold { background: #eab308; color: #000; }
+        .mini-consensus.consensus-sell, .mini-consensus.consensus-strong-sell { background: #dc2626; color: #fff; }
+        .mini-target { font-size: 11px; color: #94a3b8; }
+        .mini-upside { font-size: 12px; font-weight: 700; }
+        .read-source { font-size: 12px; color: #818cf8; margin-top: 4px; display: inline-block; }
+        .read-source:hover { color: #a5b4fc; }
+        .ticker-link { background: #1e1b4b; color: #818cf8; }
+        .ticker-link:hover { background: #312e81; }
+
+        .table-wrap { overflow-x: auto; border-radius: 12px; border: 1px solid #1e2030; }
+        table { width: 100%; border-collapse: collapse; }
+        th { padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; background: #0d0d14; border-bottom: 1px solid #1e2030; }
+        td { padding: 12px 16px; font-size: 13px; border-bottom: 1px solid #111827; }
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background: #0d0d14; }
+        .rank { color: #475569; font-size: 12px; }
+        .symbol-link { font-weight: 700; color: #818cf8; }
+        .symbol-link:hover { color: #a5b4fc; }
+        .name-cell { color: #94a3b8; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .positive { color: #22c55e; font-weight: 600; }
+        .negative { color: #ef4444; font-weight: 600; }
+
+        .ticker-search { display: flex; flex-direction: column; gap: 20px; }
+        .search-form { display: flex; gap: 10px; }
+        .search-input { flex: 1; max-width: 360px; padding: 10px 16px; background: #0d0d14; border: 1px solid #1e2030; border-radius: 8px; color: #e2e8f0; font-size: 14px; outline: none; transition: border-color 0.15s; }
+        .search-input:focus { border-color: #6366f1; }
+        .search-input::placeholder { color: #475569; }
+        .search-btn { padding: 10px 20px; background: #6366f1; color: #fff; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: background 0.15s; }
+        .search-btn:hover { background: #4f46e5; }
+        .search-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .results-label { font-size: 13px; color: #64748b; }
+        .results-label strong { color: #e2e8f0; }
+
+        .preview-card { background: #0d0d14; border: 1px solid #1e2030; border-radius: 16px; padding: 20px; display: flex; flex-direction: column; gap: 16px; }
+        .preview-header { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+        .preview-symbol { font-size: 22px; color: #818cf8; margin: 0 0 4px; }
+        .preview-name { font-size: 14px; color: #64748b; margin: 0 0 8px; }
+        .preview-price-block { text-align: right; }
+        .preview-price { font-size: 30px; font-weight: 700; color: #e2e8f0; }
+        .preview-change { font-size: 14px; font-weight: 700; }
+        .preview-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; }
+        .preview-stats div { background: #111827; border-radius: 10px; padding: 10px; display: flex; justify-content: space-between; gap: 8px; }
+        .preview-stats span { font-size: 11px; color: #64748b; }
+        .preview-stats strong { font-size: 12px; color: #e2e8f0; text-align: right; }
+        .preview-analyst { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; font-size: 12px; color: #94a3b8; }
+        .preview-description { font-size: 13px; color: #64748b; line-height: 1.6; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+        .preview-news { border-top: 1px solid #1e2030; padding-top: 12px; display: flex; flex-direction: column; gap: 8px; }
+        .preview-news h3 { font-size: 12px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; }
+        .preview-news a { font-size: 13px; color: #e2e8f0; line-height: 1.4; }
+        .preview-news a:hover { color: #818cf8; }
+        .unsupported-small { font-size: 12px; color: #64748b; background: #1e2030; padding: 8px 10px; border-radius: 8px; }
+        .preview-actions { display: flex; justify-content: flex-end; }
+        .open-detail-btn { background: #6366f1; color: #fff; border-radius: 10px; padding: 10px 14px; font-size: 13px; font-weight: 700; }
+        .open-detail-btn:hover { background: #4f46e5; }
+        body.theme-light .preview-card { background: #fff; border-color: #e2e8f0; }
+        body.theme-light .preview-price, body.theme-light .preview-stats strong, body.theme-light .preview-news a { color: #0f172a; }
+        body.theme-light .preview-stats div, body.theme-light .unsupported-small { background: #eef2ff; }
+        body.theme-light .preview-news { border-color: #e2e8f0; }
+        body.theme-light .mini-price { color: #0f172a; }
+        body.theme-light .stock-mini-info { border-color: #e2e8f0; }
+        body.theme-light .news-card { background: #fff; border-color: #e2e8f0; }
+        body.theme-light th, body.theme-light .search-input { background: #fff; border-color: #e2e8f0; color: #0f172a; }
+        body.theme-light .tab:hover, body.theme-light .tab.active, body.theme-light tr:hover td, body.theme-light .badge, body.theme-light .section-count { background: #eef2ff; }
+        body.theme-light .news-title, body.theme-light .section-title { color: #0f172a; }
+        body.theme-light td { border-color: #e2e8f0; }
+
+        .spinner { display: flex; align-items: center; justify-content: center; padding: 80px; }
+        .spinner-ring { width: 36px; height: 36px; border: 3px solid #1e2030; border-top-color: #6366f1; border-radius: 50%; animation: spin 0.7s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .error-msg { color: #ef4444; font-size: 13px; padding: 12px 16px; background: #1c0a0a; border: 1px solid #3f1515; border-radius: 8px; }
+
+        .search-hint { font-size: 12px; color: #475569; margin-top: 4px; }
+        .search-hint code { background: #1e2030; padding: 1px 5px; border-radius: 4px; color: #818cf8; }
+        .profile-meta { display: flex; flex-wrap: wrap; gap: 6px; }
+
+        @media (max-width: 640px) {
+          .content { padding: 16px; }
+          .news-grid { grid-template-columns: 1fr; }
+          .tabs { padding: 12px 16px 0; }
+        }
+      `}</style>
 
       <div className="tabs">
         {TABS.map((tab) => (
