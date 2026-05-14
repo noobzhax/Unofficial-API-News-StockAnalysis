@@ -115,10 +115,23 @@ function TickerSearch() {
     setError(null)
     setResult(null)
     try {
-      const res = await fetch(`/api/news/${ticker}`)
-      const json = await res.json()
-      if (!json.success) throw new Error(json.message || 'Failed')
-      setResult(json)
+      // Check if IDX stock (format: idx:wbsa or just wbsa for IDX)
+      const isIDX = ticker.startsWith('idx:')
+      const cleanCode = isIDX ? ticker.replace('idx:', '') : ticker
+      
+      if (isIDX) {
+        // Fetch IDX quote
+        const res = await fetch(`/api/quote/idx/${cleanCode}`)
+        const json = await res.json()
+        if (!json.success) throw new Error(json.message || 'Failed')
+        setResult({ type: 'idx-quote', ...json })
+      } else {
+        // Fetch US stock news
+        const res = await fetch(`/api/news/${cleanCode}`)
+        const json = await res.json()
+        if (!json.success) throw new Error(json.message || 'Failed')
+        setResult({ type: 'news', ...json })
+      }
     } catch (err) {
       setError(err.message)
     } finally {
@@ -133,15 +146,72 @@ function TickerSearch() {
           type="text"
           value={code}
           onChange={(e) => setCode(e.target.value)}
-          placeholder="Search ticker, e.g. AAPL"
+          placeholder="Search ticker, e.g. AAPL or idx:wbsa"
           className="search-input"
         />
         <button type="submit" className="search-btn" disabled={loading}>
           {loading ? '...' : 'Search'}
         </button>
       </form>
+      <p className="search-hint">Tip: Use <code>idx:CODE</code> for Indonesia stocks (e.g. idx:wbsa, idx:bbca)</p>
       {error && <p className="error-msg">{error}</p>}
-      {result && (
+      {result && result.type === 'idx-quote' && (
+        <div className="ticker-results">
+          <div className="idx-quote-card">
+            <div className="quote-header">
+              <div>
+                <h2 className="quote-symbol">{result.data?.exchange}:{result.data?.symbol}</h2>
+                <p className="quote-name">{result.data?.name}</p>
+              </div>
+              <div className="quote-price-block">
+                <div className="quote-price">{result.data?.quote?.price || '—'}</div>
+                <div className={`quote-change ${result.data?.quote?.changePercent?.startsWith('-') ? 'negative' : 'positive'}`}>
+                  {result.data?.quote?.change} ({result.data?.quote?.changePercent})
+                </div>
+                <div className="quote-updated">{result.data?.quote?.lastUpdated}</div>
+              </div>
+            </div>
+            <div className="quote-stats">
+              <div className="stat-row">
+                <span className="stat-label">Market Cap</span>
+                <span className="stat-value">{result.data?.stats?.marketCap || '—'}</span>
+              </div>
+              <div className="stat-row">
+                <span className="stat-label">Volume</span>
+                <span className="stat-value">{result.data?.stats?.volume || '—'}</span>
+              </div>
+              <div className="stat-row">
+                <span className="stat-label">Day's Range</span>
+                <span className="stat-value">{result.data?.stats?.dayRange || '—'}</span>
+              </div>
+              <div className="stat-row">
+                <span className="stat-label">52-Week Range</span>
+                <span className="stat-value">{result.data?.stats?.week52Range || '—'}</span>
+              </div>
+              <div className="stat-row">
+                <span className="stat-label">PE Ratio</span>
+                <span className="stat-value">{result.data?.stats?.peRatio || '—'}</span>
+              </div>
+              <div className="stat-row">
+                <span className="stat-label">RSI</span>
+                <span className="stat-value">{result.data?.stats?.rsi || '—'}</span>
+              </div>
+            </div>
+            {result.data?.profile?.description && (
+              <div className="quote-about">
+                <h3>About</h3>
+                <p>{result.data.profile.description}</p>
+                <div className="profile-meta">
+                  {result.data.profile.industry && <span className="badge">{result.data.profile.industry}</span>}
+                  {result.data.profile.sector && <span className="badge">{result.data.profile.sector}</span>}
+                  {result.data.profile.founded && <span className="badge">Founded {result.data.profile.founded}</span>}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+      {result && result.type === 'news' && (
         <div className="ticker-results">
           <p className="results-label">{result.total} news for <strong>{result.ticker?.toUpperCase()}</strong></p>
           <div className="news-grid">
@@ -250,6 +320,26 @@ export default function Dashboard() {
         @keyframes spin { to { transform: rotate(360deg); } }
 
         .error-msg { color: #ef4444; font-size: 13px; padding: 12px 16px; background: #1c0a0a; border: 1px solid #3f1515; border-radius: 8px; }
+
+        .search-hint { font-size: 12px; color: #475569; margin-top: 4px; }
+        .search-hint code { background: #1e2030; padding: 1px 5px; border-radius: 4px; color: #818cf8; }
+        .idx-quote-card { background: #0d0d14; border: 1px solid #1e2030; border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 16px; }
+        .quote-header { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px; }
+        .quote-symbol { font-size: 18px; font-weight: 700; color: #818cf8; margin: 0 0 4px; }
+        .quote-name { font-size: 13px; color: #64748b; margin: 0; }
+        .quote-price-block { text-align: right; }
+        .quote-price { font-size: 28px; font-weight: 700; color: #e2e8f0; }
+        .quote-change { font-size: 14px; font-weight: 600; margin-top: 2px; }
+        .quote-updated { font-size: 11px; color: #475569; margin-top: 2px; }
+        .quote-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 8px; }
+        .stat-row { display: flex; justify-content: space-between; gap: 8px; padding: 8px 12px; background: #111827; border-radius: 8px; }
+        .stat-label { font-size: 12px; color: #64748b; }
+        .stat-value { font-size: 12px; font-weight: 600; color: #e2e8f0; text-align: right; }
+        .quote-about { border-top: 1px solid #1e2030; padding-top: 16px; }
+        .quote-about h3 { font-size: 13px; font-weight: 600; color: #94a3b8; margin: 0 0 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .quote-about p { font-size: 13px; color: #64748b; line-height: 1.6; margin: 0 0 12px; }
+        .profile-meta { display: flex; flex-wrap: wrap; gap: 6px; }
+        .badge { font-size: 11px; padding: 3px 10px; border-radius: 999px; background: #1e2030; color: #94a3b8; }
 
         @media (max-width: 640px) {
           .content { padding: 16px; }
