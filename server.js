@@ -83,6 +83,8 @@ async function startServer() {
 
   server.all('/api/*', (req, res) => handle(req, res))
   server.all('/_next/*', (req, res) => handle(req, res))
+  server.get('/', (req, res) => handle(req, res))
+  server.get('/dashboard', (req, res) => handle(req, res))
   server.get('/uptime', async (req, res) => {
     const host = req.get('host') || `localhost:${port}`
     const protocol = req.protocol || 'http'
