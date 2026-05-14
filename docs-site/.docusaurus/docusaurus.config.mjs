@@ -26,12 +26,12 @@ export default {
       {
         "docs": {
           "routeBasePath": "/",
-          "sidebarPath": "/home/ubuntu/stock-news-api/docs-site/sidebars.js"
+          "sidebarPath": "J:\\code\\scraping\\be-next-stockanalysts\\docs-site\\sidebars.js"
         },
         "blog": false,
         "pages": false,
         "theme": {
-          "customCss": "/home/ubuntu/stock-news-api/docs-site/src/css/custom.css"
+          "customCss": "J:\\code\\scraping\\be-next-stockanalysts\\docs-site\\src\\css\\custom.css"
         }
       }
     ]
