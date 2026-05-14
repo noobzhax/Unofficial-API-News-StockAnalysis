@@ -131,6 +131,86 @@ function StockTable({ data, type }) {
   )
 }
 
+function StockPreviewCard({ result }) {
+  const quote = result.quote
+  const ratings = result.ratings
+  const news = result.news
+  const q = quote?.quote || {}
+  const stats = quote?.stats || {}
+  const profile = quote?.profile || {}
+  const detailPath = result.type === 'idx'
+    ? `/stock/idx:${result.code}`
+    : `/stock/${result.code}`
+
+  return (
+    <div className="preview-card">
+      <div className="preview-header">
+        <div>
+          <h2 className="preview-symbol">{result.type === 'idx' ? 'IDX:' : ''}{result.symbol}</h2>
+          <p className="preview-name">{result.name || quote?.name || '—'}</p>
+          <div className="profile-meta">
+            {profile.industry && <span className="badge">{profile.industry}</span>}
+            {profile.sector && <span className="badge">{profile.sector}</span>}
+            {result.type === 'idx' && <span className="badge">Indonesia</span>}
+          </div>
+        </div>
+        <div className="preview-price-block">
+          <div className="preview-price">{q.price != null ? (result.type === 'idx' ? q.price : `$${q.price.toFixed(2)}`) : '—'}</div>
+          {q.change != null && (
+            <div className={`preview-change ${String(q.change).startsWith('-') || q.change < 0 ? 'negative' : 'positive'}`}>
+              {result.type === 'idx'
+                ? `${q.change || ''} (${q.changePercent || '—'})`
+                : `${q.change >= 0 ? '+' : ''}${q.change.toFixed(2)} (${q.changePercent != null ? `${q.changePercent >= 0 ? '+' : ''}${q.changePercent.toFixed(2)}%` : '—'})`}
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="preview-stats">
+        <div><span>Market Cap</span><strong>{stats.marketCap || '—'}</strong></div>
+        <div><span>Volume</span><strong>{q.volume?.toLocaleString?.() || stats.volume || '—'}</strong></div>
+        <div><span>PE</span><strong>{stats.peRatio || '—'}</strong></div>
+        <div><span>RSI</span><strong>{stats.rsi || '—'}</strong></div>
+      </div>
+
+      {ratings?.summary && (
+        <div className="preview-analyst">
+          <span className={`mini-consensus consensus-${ratings.summary.consensus?.toLowerCase().replace(/\s+/g, '-')}`}>
+            {ratings.summary.consensus || 'Consensus N/A'}
+          </span>
+          {ratings.summary.priceTarget != null && <span>Target ${ratings.summary.priceTarget.toFixed(2)}</span>}
+          {ratings.summary.upside != null && (
+            <span className={ratings.summary.upside >= 0 ? 'positive' : 'negative'}>
+              {ratings.summary.upside >= 0 ? '+' : ''}{ratings.summary.upside.toFixed(1)}%
+            </span>
+          )}
+        </div>
+      )}
+
+      {profile.description && <p className="preview-description">{profile.description}</p>}
+
+      {news?.data?.length > 0 && (
+        <div className="preview-news">
+          <h3>Latest News</h3>
+          {news.data.slice(0, 3).map((item) => (
+            <a key={item.id} href={item.url} target="_blank" rel="noopener noreferrer">
+              {item.title}
+            </a>
+          ))}
+        </div>
+      )}
+
+      {result.unsupported?.length > 0 && (
+        <p className="unsupported-small">Unavailable on StockAnalysis: {result.unsupported.join(', ')}</p>
+      )}
+
+      <div className="preview-actions">
+        <Link href={detailPath} className="open-detail-btn">Open full detail →</Link>
+      </div>
+    </div>
+  )
+}
+
 function TickerSearch() {
   const [code, setCode] = useState('')
   const [result, setResult] = useState(null)
@@ -145,23 +225,10 @@ function TickerSearch() {
     setError(null)
     setResult(null)
     try {
-      // Check if IDX stock (format: idx:wbsa or just wbsa for IDX)
-      const isIDX = ticker.startsWith('idx:')
-      const cleanCode = isIDX ? ticker.replace('idx:', '') : ticker
-      
-      if (isIDX) {
-        // Fetch IDX quote
-        const res = await fetch(`/api/quote/idx/${cleanCode}`)
-        const json = await res.json()
-        if (!json.success) throw new Error(json.message || 'Failed')
-        setResult({ type: 'idx-quote', ...json })
-      } else {
-        // Fetch US stock news
-        const res = await fetch(`/api/news/${cleanCode}`)
-        const json = await res.json()
-        if (!json.success) throw new Error(json.message || 'Failed')
-        setResult({ type: 'news', ...json })
-      }
+      const res = await fetch(`/api/stock/${encodeURIComponent(ticker)}`)
+      const json = await res.json()
+      if (!json.success) throw new Error(json.message || 'Failed')
+      setResult(json)
     } catch (err) {
       setError(err.message)
     } finally {
@@ -176,7 +243,7 @@ function TickerSearch() {
           type="text"
           value={code}
           onChange={(e) => setCode(e.target.value)}
-          placeholder="Search ticker, e.g. AAPL or idx:wbsa"
+          placeholder="Search ticker, e.g. AAPL or idx:bbca"
           className="search-input"
         />
         <button type="submit" className="search-btn" disabled={loading}>
@@ -185,70 +252,7 @@ function TickerSearch() {
       </form>
       <p className="search-hint">Tip: Use <code>idx:CODE</code> for Indonesia stocks (e.g. idx:wbsa, idx:bbca)</p>
       {error && <p className="error-msg">{error}</p>}
-      {result && result.type === 'idx-quote' && (
-        <div className="ticker-results">
-          <div className="idx-quote-card">
-            <div className="quote-header">
-              <div>
-                <h2 className="quote-symbol">{result.data?.exchange}:{result.data?.symbol}</h2>
-                <p className="quote-name">{result.data?.name}</p>
-              </div>
-              <div className="quote-price-block">
-                <div className="quote-price">{result.data?.quote?.price || '—'}</div>
-                <div className={`quote-change ${result.data?.quote?.changePercent?.startsWith('-') ? 'negative' : 'positive'}`}>
-                  {result.data?.quote?.change} ({result.data?.quote?.changePercent})
-                </div>
-                <div className="quote-updated">{result.data?.quote?.lastUpdated}</div>
-              </div>
-            </div>
-            <div className="quote-stats">
-              <div className="stat-row">
-                <span className="stat-label">Market Cap</span>
-                <span className="stat-value">{result.data?.stats?.marketCap || '—'}</span>
-              </div>
-              <div className="stat-row">
-                <span className="stat-label">Volume</span>
-                <span className="stat-value">{result.data?.stats?.volume || '—'}</span>
-              </div>
-              <div className="stat-row">
-                <span className="stat-label">Day's Range</span>
-                <span className="stat-value">{result.data?.stats?.dayRange || '—'}</span>
-              </div>
-              <div className="stat-row">
-                <span className="stat-label">52-Week Range</span>
-                <span className="stat-value">{result.data?.stats?.week52Range || '—'}</span>
-              </div>
-              <div className="stat-row">
-                <span className="stat-label">PE Ratio</span>
-                <span className="stat-value">{result.data?.stats?.peRatio || '—'}</span>
-              </div>
-              <div className="stat-row">
-                <span className="stat-label">RSI</span>
-                <span className="stat-value">{result.data?.stats?.rsi || '—'}</span>
-              </div>
-            </div>
-            {result.data?.profile?.description && (
-              <div className="quote-about">
-                <h3>About</h3>
-                <p>{result.data.profile.description}</p>
-                <div className="profile-meta">
-                  {result.data.profile.industry && <span className="badge">{result.data.profile.industry}</span>}
-                  {result.data.profile.sector && <span className="badge">{result.data.profile.sector}</span>}
-                  {result.data.profile.founded && <span className="badge">Founded {result.data.profile.founded}</span>}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-      {result && result.type === 'news' && (
-        <div className="ticker-results">
-          <p className="results-label">{result.total} news for <strong>{result.ticker?.toUpperCase()}</strong></p>
-          <div className="news-grid">
-            {result.data?.map((item) => <NewsCard key={item.id} item={item} />)}
-          </div>
-        </div>
-      )}
+      {result && <StockPreviewCard result={result} />}
     </div>
   )
 }
