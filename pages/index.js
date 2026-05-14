@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import Link from 'next/link'
 
 const TABS = [
   { key: 'news', label: 'Market News' },
@@ -75,14 +76,9 @@ function StockTable({ data, type }) {
               <tr key={item.symbol || i}>
                 {type === 'trending' && <td className="rank">{item.rank ?? i + 1}</td>}
                 <td>
-                  <a
-                    href={item.url || `https://stockanalysis.com/stocks/${String(item.symbol).toLowerCase()}/`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="symbol-link"
-                  >
+                  <Link href={`/stock/${String(item.symbol).toLowerCase()}`} className="symbol-link">
                     {item.symbol}
-                  </a>
+                  </Link>
                 </td>
                 <td className="name-cell">{item.name || '—'}</td>
                 <td className={isPositive ? 'positive' : 'negative'}>
