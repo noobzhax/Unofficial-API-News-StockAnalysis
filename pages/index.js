@@ -11,18 +11,31 @@ const TABS = [
   { key: 'losers', label: 'Top Losers' },
 ]
 
+function toNum(val) {
+  if (val == null) return null
+  if (typeof val === 'number') return val
+  const n = parseFloat(String(val).replace(/[,%]/g, ''))
+  return isNaN(n) ? null : n
+}
+
+function fmt(val, decimals = 2) {
+  const n = toNum(val)
+  return n == null ? (val != null ? String(val) : '—') : n.toFixed(decimals)
+}
+
 function formatChange(val) {
   if (val == null) return '—'
-  const num = parseFloat(val)
-  if (isNaN(num)) return val
+  if (typeof val === 'string' && val.includes('%')) return val
+  const num = toNum(val)
+  if (num == null) return String(val)
   const sign = num >= 0 ? '+' : ''
   return `${sign}${num.toFixed(2)}%`
 }
 
 function formatMarketCap(val) {
   if (val == null) return '—'
-  const num = parseFloat(val)
-  if (isNaN(num)) return val
+  const num = toNum(val)
+  if (num == null) return String(val)
   if (num >= 1e12) return `$${(num / 1e12).toFixed(2)}T`
   if (num >= 1e9) return `$${(num / 1e9).toFixed(2)}B`
   if (num >= 1e6) return `$${(num / 1e6).toFixed(2)}M`
@@ -69,16 +82,16 @@ function NewsCard({ item }) {
         {item.summary && <p className="news-summary">{item.summary}</p>}
         {stockInfo && (
           <div className="stock-mini-info">
-            {stockInfo.price != null && <span className="mini-price">${stockInfo.price.toFixed(2)}</span>}
+            {stockInfo.price != null && <span className="mini-price">${fmt(stockInfo.price)}</span>}
             {stockInfo.consensus && (
               <span className={`mini-consensus consensus-${stockInfo.consensus.toLowerCase().replace(/\s+/g, '-')}`}>
                 {stockInfo.consensus}
               </span>
             )}
-            {stockInfo.priceTarget != null && <span className="mini-target">Target ${stockInfo.priceTarget.toFixed(2)}</span>}
+            {stockInfo.priceTarget != null && <span className="mini-target">Target ${fmt(stockInfo.priceTarget)}</span>}
             {stockInfo.upside != null && (
-              <span className={`mini-upside ${stockInfo.upside >= 0 ? 'positive' : 'negative'}`}>
-                {stockInfo.upside >= 0 ? '+' : ''}{stockInfo.upside.toFixed(1)}%
+              <span className={`mini-upside ${toNum(stockInfo.upside) >= 0 ? 'positive' : 'negative'}`}>
+                {formatChange(stockInfo.upside)}
               </span>
             )}
           </div>
@@ -157,12 +170,12 @@ function StockPreviewCard({ result }) {
           </div>
         </div>
         <div className="preview-price-block">
-          <div className="preview-price">{q.price != null ? (result.type === 'idx' ? q.price : `$${q.price.toFixed(2)}`) : '—'}</div>
+          <div className="preview-price">{q.price != null ? (result.type === 'idx' ? q.price : `$${fmt(q.price)}`) : '—'}</div>
           {q.change != null && (
-            <div className={`preview-change ${String(q.change).startsWith('-') || q.change < 0 ? 'negative' : 'positive'}`}>
+            <div className={`preview-change ${String(q.change).startsWith('-') || toNum(q.change) < 0 ? 'negative' : 'positive'}`}>
               {result.type === 'idx'
                 ? `${q.change || ''} (${q.changePercent || '—'})`
-                : `${q.change >= 0 ? '+' : ''}${q.change.toFixed(2)} (${q.changePercent != null ? `${q.changePercent >= 0 ? '+' : ''}${q.changePercent.toFixed(2)}%` : '—'})`}
+                : `${toNum(q.change) >= 0 ? '+' : ''}${fmt(q.change)} (${formatChange(q.changePercent)})`}
             </div>
           )}
         </div>
@@ -180,10 +193,10 @@ function StockPreviewCard({ result }) {
           <span className={`mini-consensus consensus-${ratings.summary.consensus?.toLowerCase().replace(/\s+/g, '-')}`}>
             {ratings.summary.consensus || 'Consensus N/A'}
           </span>
-          {ratings.summary.priceTarget != null && <span>Target ${ratings.summary.priceTarget.toFixed(2)}</span>}
+          {ratings.summary.priceTarget != null && <span>Target ${fmt(ratings.summary.priceTarget)}</span>}
           {ratings.summary.upside != null && (
-            <span className={ratings.summary.upside >= 0 ? 'positive' : 'negative'}>
-              {ratings.summary.upside >= 0 ? '+' : ''}{ratings.summary.upside.toFixed(1)}%
+            <span className={toNum(ratings.summary.upside) >= 0 ? 'positive' : 'negative'}>
+              {formatChange(ratings.summary.upside)}
             </span>
           )}
         </div>

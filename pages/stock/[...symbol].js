@@ -3,10 +3,24 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import AppLayout from '../../components/AppLayout'
 
+function toNum(val) {
+  if (val == null) return null
+  if (typeof val === 'number') return val
+  const n = parseFloat(String(val).replace(/[,%]/g, ''))
+  return isNaN(n) ? null : n
+}
+
+function fmt(val, decimals = 2) {
+  const n = toNum(val)
+  return n == null ? (val != null ? String(val) : '—') : n.toFixed(decimals)
+}
+
 function formatChange(val) {
   if (val == null) return '—'
-  const num = parseFloat(val)
-  if (isNaN(num)) return val
+  // already formatted string like "-1.18%" — return as-is
+  if (typeof val === 'string' && val.includes('%')) return val
+  const num = toNum(val)
+  if (num == null) return String(val)
   const sign = num >= 0 ? '+' : ''
   return `${sign}${num.toFixed(2)}%`
 }
@@ -35,10 +49,10 @@ function OverviewCard({ data, type }) {
           {data.country && <span className="badge">{data.country}</span>}
         </div>
         <div className="overview-price-block">
-          <div className="overview-price">{q.price != null ? `$${q.price.toFixed(2)}` : '—'}</div>
+          <div className="overview-price">{q.price != null ? `$${fmt(q.price)}` : '—'}</div>
           {q.change != null && (
-            <div className={`overview-change ${q.change >= 0 ? 'positive' : 'negative'}`}>
-              {q.change >= 0 ? '+' : ''}{q.change.toFixed(2)} ({q.changePercent != null ? `${q.changePercent >= 0 ? '+' : ''}${q.changePercent.toFixed(2)}%` : '—'})
+            <div className={`overview-change ${toNum(q.change) >= 0 ? 'positive' : 'negative'}`}>
+              {toNum(q.change) >= 0 ? '+' : ''}{fmt(q.change)} ({q.changePercent != null ? formatChange(q.changePercent) : '—'})
             </div>
           )}
           {q.lastUpdated && <div className="overview-updated">Updated {q.lastUpdated}</div>}
@@ -47,14 +61,14 @@ function OverviewCard({ data, type }) {
 
       <div className="stat-grid">
         <StatCard label="Market Cap" value={s.marketCap} />
-        <StatCard label="Volume" value={q.volume?.toLocaleString()} />
-        <StatCard label="Day Range" value={q.dayHigh && q.dayLow ? `$${q.dayLow.toFixed(2)} – $${q.dayHigh.toFixed(2)}` : null} />
-        <StatCard label="52W Range" value={s.week52Low && s.week52High ? `$${s.week52Low.toFixed(2)} – $${s.week52High.toFixed(2)}` : null} />
+        <StatCard label="Volume" value={toNum(q.volume)?.toLocaleString() || q.volume} />
+        <StatCard label="Day Range" value={q.dayRange || (q.dayHigh && q.dayLow ? `$${fmt(q.dayLow)} – $${fmt(q.dayHigh)}` : null)} />
+        <StatCard label="52W Range" value={s.week52Range || (s.week52Low && s.week52High ? `$${fmt(s.week52Low)} – $${fmt(s.week52High)}` : null)} />
         <StatCard label="PE Ratio" value={s.peRatio} />
         <StatCard label="EPS" value={s.eps} />
         <StatCard label="Forward PE" value={s.forwardPE} />
         <StatCard label="Beta" value={s.beta} />
-        <StatCard label="Dividend" value={s.dividend != null ? `${(s.dividend * 100).toFixed(2)}%` : null} />
+        <StatCard label="Dividend" value={s.dividend != null && typeof s.dividend === 'number' ? `${(s.dividend * 100).toFixed(2)}%` : s.dividend} />
         <StatCard label="RSI" value={s.rsi} />
         <StatCard label="Shares Out" value={s.sharesOut} />
         <StatCard label="Earnings" value={s.earningsDate} />
@@ -99,7 +113,7 @@ function ConsensusCard({ summary }) {
       </div>
       <div className="stat-card">
         <div className="stat-label">Price Target</div>
-        <div className="stat-value">{summary.priceTarget != null ? `$${summary.priceTarget.toFixed(2)}` : '—'}</div>
+        <div className="stat-value">{summary.priceTarget != null ? `$${fmt(summary.priceTarget)}` : '—'}</div>
       </div>
       <div className="stat-card">
         <div className="stat-label">Upside</div>
