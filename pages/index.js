@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { IDX_STOCKS } from '../lib/idxStocks'
 import Link from 'next/link'
 import AppLayout from '../components/AppLayout'
 
@@ -217,16 +218,48 @@ function TickerSearch() {
   const [result, setResult] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+  const [suggestions, setSuggestions] = useState([])
+  const [showSuggestions, setShowSuggestions] = useState(false)
 
-  const search = useCallback(async (e) => {
-    e.preventDefault()
-    const ticker = code.trim().toLowerCase()
-    if (!ticker) return
+  const handleInput = (val) => {
+    setCode(val)
+    const q = val.trim().toLowerCase()
+    // Show IDX suggestions when user types idx: or just letters that match IDX stocks
+    if (q.length >= 1) {
+      const isIdxPrefix = q.startsWith('idx:')
+      const searchQ = isIdxPrefix ? q.replace('idx:', '') : q
+      // Filter IDX_STOCKS inline (imported via window or passed as prop)
+      const filtered = IDX_STOCKS
+        .filter((s) =>
+          s.symbol.toLowerCase().includes(searchQ) ||
+          s.name.toLowerCase().includes(searchQ)
+        )
+        .slice(0, 8)
+      setSuggestions(filtered)
+      setShowSuggestions(filtered.length > 0)
+    } else {
+      setSuggestions([])
+      setShowSuggestions(false)
+    }
+  }
+
+  const selectSuggestion = (symbol) => {
+    const val = `idx:${symbol.toLowerCase()}`
+    setCode(val)
+    setSuggestions([])
+    setShowSuggestions(false)
+    doSearch(val)
+  }
+
+  const doSearch = async (ticker) => {
+    const t = (ticker || code).trim().toLowerCase()
+    if (!t) return
     setLoading(true)
     setError(null)
     setResult(null)
+    setShowSuggestions(false)
     try {
-      const res = await fetch(`/api/stock/${encodeURIComponent(ticker)}`)
+      const res = await fetch(`/api/stock/${encodeURIComponent(t)}`)
       const json = await res.json()
       if (!json.success) throw new Error(json.message || 'Failed')
       setResult(json)
@@ -235,28 +268,68 @@ function TickerSearch() {
     } finally {
       setLoading(false)
     }
+  }
+
+  const search = useCallback(async (e) => {
+    e.preventDefault()
+    doSearch(code)
   }, [code])
 
   return (
     <div className="ticker-search">
-      <form onSubmit={search} className="search-form">
-        <input
-          type="text"
-          value={code}
-          onChange={(e) => setCode(e.target.value)}
-          placeholder="Search ticker, e.g. AAPL or idx:bbca"
-          className="search-input"
-        />
-        <button type="submit" className="search-btn" disabled={loading}>
-          {loading ? '...' : 'Search'}
-        </button>
-      </form>
-      <p className="search-hint">Tip: Use <code>idx:CODE</code> for Indonesia stocks (e.g. idx:wbsa, idx:bbca)</p>
+      <div className="search-wrap">
+        <form onSubmit={search} className="search-form">
+          <input
+            type="text"
+            value={code}
+            onChange={(e) => handleInput(e.target.value)}
+            onFocus={() => code.trim().length >= 1 && setShowSuggestions(suggestions.length > 0)}
+            onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
+            placeholder="Search ticker, e.g. AAPL or idx:bbca"
+            className="search-input"
+            autoComplete="off"
+          />
+          <button type="submit" className="search-btn" disabled={loading}>
+            {loading ? '...' : 'Search'}
+          </button>
+        </form>
+        {showSuggestions && (
+          <div className="suggestions-dropdown">
+            {suggestions.map((stock) => (
+              <button
+                key={stock.symbol}
+                type="button"
+                className="suggestion-item"
+                onMouseDown={() => selectSuggestion(stock.symbol)}
+              >
+                <span className="suggestion-symbol">IDX:{stock.symbol}</span>
+                <span className="suggestion-name">{stock.name}</span>
+                <span className="suggestion-sector">{stock.sector}</span>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+      <p className="search-hint">Tip: Use <code>idx:CODE</code> for Indonesia stocks (e.g. idx:bbca, idx:tlkm)</p>
+      <div className="idx-popular">
+        <span className="idx-popular-label">Popular IDX:</span>
+        {['BBCA','BBRI','TLKM','GOTO','ASII','ADRO','ANTM','BUKA'].map((sym) => (
+          <button
+            key={sym}
+            type="button"
+            className="idx-chip"
+            onClick={() => selectSuggestion(sym)}
+          >
+            {sym}
+          </button>
+        ))}
+      </div>
       {error && <p className="error-msg">{error}</p>}
       {result && <StockPreviewCard result={result} />}
     </div>
   )
 }
+
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState('news')
@@ -382,6 +455,22 @@ export default function Dashboard() {
         body.theme-light .tab:hover, body.theme-light .tab.active, body.theme-light tr:hover td, body.theme-light .badge, body.theme-light .section-count { background: #eef2ff; }
         body.theme-light .news-title, body.theme-light .section-title { color: #0f172a; }
         body.theme-light td { border-color: #e2e8f0; }
+
+        .search-wrap { position: relative; }
+        .suggestions-dropdown { position: absolute; top: 100%; left: 0; right: 0; max-width: 500px; background: #0d0d14; border: 1px solid #6366f1; border-radius: 10px; margin-top: 4px; z-index: 100; overflow: hidden; box-shadow: 0 8px 32px rgba(0,0,0,0.5); }
+        .suggestion-item { width: 100%; display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: transparent; border: none; cursor: pointer; text-align: left; transition: background 0.1s; }
+        .suggestion-item:hover { background: #1e2030; }
+        .suggestion-symbol { font-size: 13px; font-weight: 700; color: #818cf8; min-width: 90px; }
+        .suggestion-name { font-size: 12px; color: #94a3b8; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .suggestion-sector { font-size: 11px; color: #475569; white-space: nowrap; }
+        .idx-popular { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+        .idx-popular-label { font-size: 12px; color: #475569; }
+        .idx-chip { padding: 4px 12px; background: #1e1b4b; color: #818cf8; border: 1px solid #312e81; border-radius: 999px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.15s; }
+        .idx-chip:hover { background: #312e81; border-color: #6366f1; }
+        body.theme-light .suggestions-dropdown { background: #fff; border-color: #6366f1; }
+        body.theme-light .suggestion-item:hover { background: #eef2ff; }
+        body.theme-light .suggestion-name { color: #475569; }
+        body.theme-light .idx-chip { background: #eef2ff; color: #4f46e5; border-color: #c7d2fe; }
 
         .spinner { display: flex; align-items: center; justify-content: center; padding: 80px; }
         .spinner-ring { width: 36px; height: 36px; border: 3px solid #1e2030; border-top-color: #6366f1; border-radius: 50%; animation: spin 0.7s linear infinite; }
