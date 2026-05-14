@@ -141,7 +141,7 @@ function StockPreviewCard({ result }) {
   const stats = quote?.stats || {}
   const profile = quote?.profile || {}
   const detailPath = result.type === 'idx'
-    ? `/stock/idx:${result.code}`
+    ? `/stock/idx/${result.code}`
     : `/stock/${result.code}`
 
   return (
