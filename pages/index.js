@@ -28,13 +28,28 @@ function formatMarketCap(val) {
 }
 
 function NewsCard({ item }) {
+  const [stockInfo, setStockInfo] = useState(null)
+  const mainTicker = item.tickers?.[0]
+
+  useEffect(() => {
+    if (!mainTicker) return
+    fetch(`/api/ratings/${mainTicker.toLowerCase()}`)
+      .then((r) => r.json())
+      .then((json) => {
+        if (json.success) {
+          setStockInfo({
+            price: json.currentPrice,
+            consensus: json.summary?.consensus,
+            priceTarget: json.summary?.priceTarget,
+            upside: json.summary?.upside
+          })
+        }
+      })
+      .catch(() => {})
+  }, [mainTicker])
+
   return (
-    <a
-      href={item.url}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="news-card"
-    >
+    <article className="news-card">
       {item.imageUrl && (
         <img src={item.imageUrl} alt={item.title} className="news-img" />
       )}
@@ -42,14 +57,33 @@ function NewsCard({ item }) {
         <div className="news-meta">
           {item.source && <span className="badge">{item.source}</span>}
           {item.tickers?.slice(0, 3).map((t) => (
-            <span key={t} className="badge ticker">{t}</span>
+            <Link key={t} href={`/stock/${t.toLowerCase()}`} className="badge ticker-link">
+              {t}
+            </Link>
           ))}
           {item.relativeTime && <span className="news-time">{item.relativeTime}</span>}
         </div>
         <h3 className="news-title">{item.title}</h3>
         {item.summary && <p className="news-summary">{item.summary}</p>}
+        {stockInfo && (
+          <div className="stock-mini-info">
+            {stockInfo.price != null && <span className="mini-price">${stockInfo.price.toFixed(2)}</span>}
+            {stockInfo.consensus && (
+              <span className={`mini-consensus consensus-${stockInfo.consensus.toLowerCase().replace(/\s+/g, '-')}`}>
+                {stockInfo.consensus}
+              </span>
+            )}
+            {stockInfo.priceTarget != null && <span className="mini-target">Target ${stockInfo.priceTarget.toFixed(2)}</span>}
+            {stockInfo.upside != null && (
+              <span className={`mini-upside ${stockInfo.upside >= 0 ? 'positive' : 'negative'}`}>
+                {stockInfo.upside >= 0 ? '+' : ''}{stockInfo.upside.toFixed(1)}%
+              </span>
+            )}
+          </div>
+        )}
+        {item.url && <a href={item.url} target="_blank" rel="noopener noreferrer" className="read-source">Read source →</a>}
       </div>
-    </a>
+    </article>
   )
 }
 
@@ -333,6 +367,20 @@ export default function Dashboard() {
         .news-time { font-size: 11px; color: #475569; margin-left: auto; }
         .news-title { font-size: 14px; font-weight: 600; line-height: 1.4; color: #e2e8f0; }
         .news-summary { font-size: 12px; color: #64748b; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .stock-mini-info { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin-top: 10px; padding-top: 10px; border-top: 1px solid #1e2030; }
+        .mini-price { font-size: 16px; font-weight: 700; color: #e2e8f0; }
+        .mini-consensus { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 999px; text-transform: uppercase; }
+        .mini-consensus.consensus-strong-buy, .mini-consensus.consensus-buy { background: #16a34a; color: #fff; }
+        .mini-consensus.consensus-hold { background: #eab308; color: #000; }
+        .mini-consensus.consensus-sell, .mini-consensus.consensus-strong-sell { background: #dc2626; color: #fff; }
+        .mini-target { font-size: 11px; color: #94a3b8; }
+        .mini-upside { font-size: 12px; font-weight: 700; }
+        .read-source { font-size: 12px; color: #818cf8; margin-top: 4px; display: inline-block; }
+        .read-source:hover { color: #a5b4fc; }
+        .ticker-link { background: #1e1b4b; color: #818cf8; }
+        .ticker-link:hover { background: #312e81; }
+        body.theme-light .mini-price { color: #0f172a; }
+        body.theme-light .stock-mini-info { border-color: #e2e8f0; }
 
         .table-wrap { overflow-x: auto; border-radius: 12px; border: 1px solid #1e2030; }
         table { width: 100%; border-collapse: collapse; }
