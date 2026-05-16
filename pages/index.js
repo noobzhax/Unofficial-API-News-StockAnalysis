@@ -4,11 +4,11 @@ import Link from 'next/link'
 import AppLayout from '../components/AppLayout'
 
 const TABS = [
-  { key: 'news', label: 'Market News' },
-  { key: 'ipos', label: 'IPO News' },
   { key: 'trending', label: 'Trending' },
   { key: 'gainers', label: 'Top Gainers' },
   { key: 'losers', label: 'Top Losers' },
+  { key: 'ipos', label: 'IPO News' },
+  { key: 'news', label: 'Market News' },
 ]
 
 function toNum(val) {
@@ -345,7 +345,7 @@ function TickerSearch() {
 
 
 export default function Dashboard() {
-  const [activeTab, setActiveTab] = useState('news')
+  const [activeTab, setActiveTab] = useState('trending')
   const [data, setData] = useState({})
   const [loading, setLoading] = useState({})
   const [errors, setErrors] = useState({})
