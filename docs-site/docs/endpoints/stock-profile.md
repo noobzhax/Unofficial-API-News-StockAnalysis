@@ -16,6 +16,20 @@ Mengambil profil perusahaan untuk saham US dari StockAnalysis.
 
 <ApiUrl path="/api/stock/{code}/profile" />
 
+**Format URL lengkap:**
+
+```txt
+https://<domain-vercel-kamu>/api/stock/{code}/profile
+```
+
+**Contoh URL siap pakai:**
+
+```txt
+https://<domain-vercel-kamu>/api/stock/nvda/profile
+https://<domain-vercel-kamu>/api/stock/aapl/profile
+https://<domain-vercel-kamu>/api/stock/tsla/profile
+```
+
 ## URL Sumber
 
 `https://stockanalysis.com/stocks/{code}/`
@@ -29,7 +43,7 @@ Mengambil profil perusahaan untuk saham US dari StockAnalysis.
 ## Contoh Request
 
 ```bash
-curl "https://your-domain.com/api/stock/nvda/profile"
+curl "https://<domain-vercel-kamu>/api/stock/nvda/profile"
 ```
 
 ## Success Response

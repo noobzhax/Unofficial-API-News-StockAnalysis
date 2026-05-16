@@ -16,6 +16,20 @@ Mengambil profil perusahaan untuk saham Indonesia Stock Exchange (IDX) dari Stoc
 
 <ApiUrl path="/api/idx/{code}/profile" />
 
+**Format URL lengkap:**
+
+```txt
+https://<domain-vercel-kamu>/api/idx/{code}/profile
+```
+
+**Contoh URL siap pakai:**
+
+```txt
+https://<domain-vercel-kamu>/api/idx/bbca/profile
+https://<domain-vercel-kamu>/api/idx/tlkm/profile
+https://<domain-vercel-kamu>/api/idx/asii/profile
+```
+
 ## URL Sumber
 
 `https://stockanalysis.com/quote/idx/{code}/`
@@ -29,7 +43,7 @@ Mengambil profil perusahaan untuk saham Indonesia Stock Exchange (IDX) dari Stoc
 ## Contoh Request
 
 ```bash
-curl "https://your-domain.com/api/idx/bbca/profile"
+curl "https://<domain-vercel-kamu>/api/idx/bbca/profile"
 ```
 
 ## Success Response

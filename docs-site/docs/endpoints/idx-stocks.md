@@ -16,6 +16,20 @@ Mengambil daftar saham Indonesia Stock Exchange (IDX) yang tersedia di aplikasi.
 
 <ApiUrl path="/api/idx/stocks" />
 
+**Format URL lengkap:**
+
+```txt
+https://<domain-vercel-kamu>/api/idx/stocks
+```
+
+**Contoh URL siap pakai:**
+
+```txt
+https://<domain-vercel-kamu>/api/idx/stocks?search=bbca&limit=5
+https://<domain-vercel-kamu>/api/idx/stocks?search=bank&limit=10
+https://<domain-vercel-kamu>/api/idx/stocks?limit=1000
+```
+
 ## Query Parameters
 
 | Parameter | Tipe | Required | Keterangan | Contoh |
@@ -26,7 +40,7 @@ Mengambil daftar saham Indonesia Stock Exchange (IDX) yang tersedia di aplikasi.
 ## Contoh Request
 
 ```bash
-curl "https://your-domain.com/api/idx/stocks?search=bbca&limit=5"
+curl "https://<domain-vercel-kamu>/api/idx/stocks?search=bbca&limit=5"
 ```
 
 ## Success Response
