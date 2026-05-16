@@ -5,7 +5,7 @@ const config = {
   title: 'StockAnalysis Unofficial API',
   tagline: 'Dokumentasi endpoint news dan IPO news',
   url: 'http://localhost:3000',
-  baseUrl: '/',
+  baseUrl: '/docs/',
   organizationName: 'local',
   projectName: 'be-next-stockanalysts',
   onBrokenLinks: 'warn',

@@ -106,14 +106,19 @@ async function startServer() {
   })
 
   if (fs.existsSync(docsBuildDir)) {
-    server.use(express.static(docsBuildDir))
+    server.use('/docs', express.static(docsBuildDir))
 
-    server.get('*', (req, res) => {
+    server.get('/docs', (req, res) => {
+      res.redirect('/docs/')
+    })
+
+    server.get('/docs/*', (req, res) => {
       res.sendFile(path.join(docsBuildDir, 'index.html'))
     })
-  } else {
-    server.get('*', (req, res) => sendDocsUnavailable(res))
   }
+
+  // Next.js handles all other routes
+  server.all('*', (req, res) => handle(req, res))
 
   server.listen(port, () => {
     process.stdout.write(`> Ready on http://localhost:${port}\n`)
