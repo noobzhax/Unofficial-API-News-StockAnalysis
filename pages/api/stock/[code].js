@@ -44,21 +44,36 @@ export default async function handler(req, res) {
     let quote = null
     let news = null
     let ratings = null
+    let profile = null
     let unsupported = []
     let errors = []
 
     if (parsed.type === 'idx') {
-      const quoteData = await fetchJson(`${baseUrl}/api/quote/idx/${parsed.code}`)
-      if (!quoteData.success) {
-        return res.status(quoteData.code === API_ERRORS.NOT_FOUND ? 404 : 502).json(quoteData)
+      const [quoteData, profileData] = await Promise.allSettled([
+        fetchJson(`${baseUrl}/api/quote/idx/${parsed.code}`),
+        fetchJson(`${baseUrl}/api/idx/${parsed.code}/profile`)
+      ])
+
+      if (quoteData.status === 'rejected' || !quoteData.value?.success) {
+        const err = quoteData.status === 'fulfilled' ? quoteData.value : { code: API_ERRORS.UPSTREAM_ERROR, message: quoteData.reason?.message || 'Request failed' }
+        return res.status(err.code === API_ERRORS.NOT_FOUND ? 404 : 502).json(err)
       }
-      quote = quoteData
+
+      quote = quoteData.value
+
+      if (profileData.status === 'fulfilled' && profileData.value?.success) {
+        profile = profileData.value.data
+      } else {
+        errors.push({ source: 'profile', message: profileData.status === 'rejected' ? profileData.reason?.message || 'Request failed' : profileData.value?.message || 'Profile unavailable' })
+      }
+
       unsupported = ['news', 'ratings']
     } else {
-      const [quoteData, newsData, ratingsData] = await Promise.allSettled([
+      const [quoteData, newsData, ratingsData, profileData] = await Promise.allSettled([
         fetchJson(`${baseUrl}/api/quote/us/${parsed.code}`),
         fetchJson(`${baseUrl}/api/news/${parsed.code}`),
-        fetchJson(`${baseUrl}/api/ratings/${parsed.code}`)
+        fetchJson(`${baseUrl}/api/ratings/${parsed.code}`),
+        fetchJson(`${baseUrl}/api/stock/${parsed.code}/profile`)
       ])
 
       for (const [label, result] of [
@@ -74,6 +89,12 @@ export default async function handler(req, res) {
       quote = quoteData.status === 'fulfilled' && quoteData.value.success ? quoteData.value : null
       news = newsData.status === 'fulfilled' && newsData.value.success ? newsData.value : null
       ratings = ratingsData.status === 'fulfilled' && ratingsData.value.success ? ratingsData.value : null
+
+      if (profileData.status === 'fulfilled' && profileData.value?.success) {
+        profile = profileData.value.data
+      } else {
+        errors.push({ source: 'profile', message: profileData.status === 'rejected' ? profileData.reason?.message || 'Request failed' : profileData.value?.message || 'Profile unavailable' })
+      }
 
       if (!quote && !news && !ratings) {
         return res.status(502).json(createError(
@@ -92,6 +113,7 @@ export default async function handler(req, res) {
       code: parsed.code,
       symbol: quote?.data?.symbol || ratings?.symbol || parsed.code.toUpperCase(),
       name: quote?.data?.name || ratings?.name || null,
+      profile,
       quote: quote?.data || null,
       ratings,
       news,
