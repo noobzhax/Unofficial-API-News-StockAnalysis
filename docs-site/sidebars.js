@@ -7,6 +7,9 @@ module.exports = {
     'endpoints/ratings',
     'endpoints/trending',
     'endpoints/gainers',
-    'endpoints/losers'
+    'endpoints/losers',
+    'endpoints/idx-stocks',
+    'endpoints/idx-profile',
+    'endpoints/stock-profile'
   ]
 }

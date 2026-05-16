@@ -64,7 +64,7 @@ function OverviewCard({ data, type }) {
       </div>
 
       <div className="stat-grid">
-        <StatCard label="Market Cap" value={s.marketCap} />
+        <StatCard label="Market Cap" value={type === 'idx' ? (toNum(s.marketCap) != null ? `IDR ${fmt(s.marketCap)}` : s.marketCap) : s.marketCap} />
         <StatCard label="Volume" value={toNum(q.volume)?.toLocaleString() || q.volume} />
         <StatCard label="Day Range" value={q.dayRange || (q.dayHigh && q.dayLow ? (type === 'idx' ? `${fmt(q.dayLow)} – ${fmt(q.dayHigh)}` : `$${fmt(q.dayLow)} – $${fmt(q.dayHigh)}`) : null)} />
         <StatCard label="52W Range" value={s.week52Range || (s.week52Low && s.week52High ? (type === 'idx' ? `${fmt(s.week52Low)} – ${fmt(s.week52High)}` : `$${fmt(s.week52Low)} – $${fmt(s.week52High)}`) : null)} />
@@ -82,11 +82,12 @@ function OverviewCard({ data, type }) {
         <div className="overview-about">
           <h3>About</h3>
           <p>{p.description}</p>
-          {(p.industry || p.sector || p.founded) && (
+          {(p.industry || p.sector || p.founded || p.website) && (
             <div className="profile-meta">
               {p.industry && <span className="badge">{p.industry}</span>}
               {p.sector && <span className="badge">{p.sector}</span>}
               {p.founded && <span className="badge">Founded {p.founded}</span>}
+              {p.website && <a className="badge website-link" href={p.website} target="_blank" rel="noopener noreferrer">Website</a>}
             </div>
           )}
           <div className="source-link">
@@ -337,8 +338,8 @@ const styles = `
   .overview-about p { font-size: 13px; color: #64748b; line-height: 1.7; margin: 0 0 12px; }
   .profile-meta { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
   .badge { font-size: 11px; padding: 3px 10px; border-radius: 999px; background: #1e2030; color: #94a3b8; }
-  .ticker-link { background: #1e1b4b; color: #818cf8; cursor: pointer; }
-  .ticker-link:hover { background: #312e81; }
+  .ticker-link, .website-link { background: #1e1b4b; color: #818cf8; cursor: pointer; }
+  .ticker-link:hover, .website-link:hover { background: #312e81; }
   .source-link { font-size: 12px; color: #475569; margin-top: 8px; }
   .source-link a { color: #6366f1; }
 

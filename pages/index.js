@@ -32,14 +32,15 @@ function formatChange(val) {
   return `${sign}${num.toFixed(2)}%`
 }
 
-function formatMarketCap(val) {
+function formatMarketCap(val, isIdr = false) {
   if (val == null) return '—'
   const num = toNum(val)
+  const prefix = isIdr ? 'IDR ' : '$'
   if (num == null) return String(val)
-  if (num >= 1e12) return `$${(num / 1e12).toFixed(2)}T`
-  if (num >= 1e9) return `$${(num / 1e9).toFixed(2)}B`
-  if (num >= 1e6) return `$${(num / 1e6).toFixed(2)}M`
-  return `$${num.toLocaleString()}`
+  if (num >= 1e12) return `${prefix}${(num / 1e12).toFixed(2)}T`
+  if (num >= 1e9) return `${prefix}${(num / 1e9).toFixed(2)}B`
+  if (num >= 1e6) return `${prefix}${(num / 1e6).toFixed(2)}M`
+  return `${prefix}${num.toLocaleString()}`
 }
 
 function NewsCard({ item }) {
@@ -182,7 +183,7 @@ function StockPreviewCard({ result }) {
       </div>
 
       <div className="preview-stats">
-        <div><span>Market Cap</span><strong>{stats.marketCap || '—'}</strong></div>
+        <div><span>Market Cap</span><strong>{result.type === 'idx' ? (toNum(stats.marketCap) != null ? formatMarketCap(stats.marketCap, true) : stats.marketCap || '—') : (stats.marketCap || '—')}</strong></div>
         <div><span>Volume</span><strong>{q.volume?.toLocaleString?.() || stats.volume || '—'}</strong></div>
         <div><span>PE</span><strong>{stats.peRatio || '—'}</strong></div>
         <div><span>RSI</span><strong>{stats.rsi || '—'}</strong></div>
