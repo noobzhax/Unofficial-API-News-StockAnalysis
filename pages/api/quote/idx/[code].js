@@ -1,47 +1,6 @@
-const REQUEST_HEADERS = {
-  'user-agent':
-    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36',
-  accept: 'text/html,application/xhtml+xml'
-}
+import { fetchWithRetry } from '../../../../lib/fetchWithRetry.js'
+import { extractMetaDescription, extractStat, extractTitle, stripTags } from '../../../../lib/htmlUtils.js'
 
-function stripTags(value = '') {
-  return String(value)
-    .replace(/<script[\s\S]*?<\/script>/gi, '')
-    .replace(/<style[\s\S]*?<\/style>/gi, '')
-    .replace(/<[^>]+>/g, ' ')
-    .replace(/&nbsp;/g, ' ')
-    .replace(/&amp;/g, '&')
-    .replace(/&#x27;/g, "'")
-    .replace(/&quot;/g, '"')
-    .replace(/\s+/g, ' ')
-    .trim()
-}
-
-function extractTitle(html) {
-  const h1 = html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i)
-  return stripTags(h1?.[1]) || null
-}
-
-function extractMetaDescription(html) {
-  const match = html.match(/<meta[^>]+name=["']description["'][^>]+content=["']([^"']+)["']/i)
-  return stripTags(match?.[1]) || null
-}
-
-function extractStat(html, label) {
-  const escaped = label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-  const patterns = [
-    new RegExp(`<td[^>]*>\\s*(?:<[^>]+>)*\\s*${escaped}\\s*(?:<[^>]+>)*\\s*<\\/td>\\s*<td[^>]*>([\\s\\S]*?)<\\/td>`, 'i'),
-    new RegExp(`<div[^>]*>\\s*(?:<[^>]+>)*\\s*${escaped}\\s*(?:<[^>]+>)*\\s*<\\/div>\\s*<div[^>]*>([\\s\\S]*?)<\\/div>`, 'i')
-  ]
-
-  for (const pattern of patterns) {
-    const match = html.match(pattern)
-    const value = stripTags(match?.[1])
-    if (value) return value
-  }
-
-  return null
-}
 
 function extractPriceBlock(html) {
   const text = stripTags(html)
@@ -84,10 +43,7 @@ export default async function handler(req, res) {
   const quoteUrl = `https://stockanalysis.com/quote/idx/${code}/`
 
   try {
-    const response = await fetch(quoteUrl, {
-      headers: REQUEST_HEADERS,
-      cache: 'no-store'
-    })
+    const response = await fetchWithRetry(quoteUrl)
 
     if (response.status === 404) {
       return res.status(404).json({ success: false, message: `IDX stock code '${code}' was not found` })
