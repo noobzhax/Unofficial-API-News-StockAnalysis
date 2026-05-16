@@ -49,10 +49,14 @@ function OverviewCard({ data, type }) {
           {data.country && <span className="badge">{data.country}</span>}
         </div>
         <div className="overview-price-block">
-          <div className="overview-price">{q.price != null ? `$${fmt(q.price)}` : '—'}</div>
+          <div className="overview-price">
+            {q.price != null ? (type === 'idx' ? q.price : `$${fmt(q.price)}`) : '—'}
+          </div>
           {q.change != null && (
-            <div className={`overview-change ${toNum(q.change) >= 0 ? 'positive' : 'negative'}`}>
-              {toNum(q.change) >= 0 ? '+' : ''}{fmt(q.change)} ({q.changePercent != null ? formatChange(q.changePercent) : '—'})
+            <div className={`overview-change ${String(q.change).startsWith('-') || toNum(q.change) < 0 ? 'negative' : 'positive'}`}>
+              {type === 'idx'
+                ? `${q.change || ''} (${q.changePercent || '—'})`
+                : `${toNum(q.change) >= 0 ? '+' : ''}${fmt(q.change)} (${formatChange(q.changePercent)})`}
             </div>
           )}
           {q.lastUpdated && <div className="overview-updated">Updated {q.lastUpdated}</div>}
@@ -62,8 +66,8 @@ function OverviewCard({ data, type }) {
       <div className="stat-grid">
         <StatCard label="Market Cap" value={s.marketCap} />
         <StatCard label="Volume" value={toNum(q.volume)?.toLocaleString() || q.volume} />
-        <StatCard label="Day Range" value={q.dayRange || (q.dayHigh && q.dayLow ? `$${fmt(q.dayLow)} – $${fmt(q.dayHigh)}` : null)} />
-        <StatCard label="52W Range" value={s.week52Range || (s.week52Low && s.week52High ? `$${fmt(s.week52Low)} – $${fmt(s.week52High)}` : null)} />
+        <StatCard label="Day Range" value={q.dayRange || (q.dayHigh && q.dayLow ? (type === 'idx' ? `${fmt(q.dayLow)} – ${fmt(q.dayHigh)}` : `$${fmt(q.dayLow)} – $${fmt(q.dayHigh)}`) : null)} />
+        <StatCard label="52W Range" value={s.week52Range || (s.week52Low && s.week52High ? (type === 'idx' ? `${fmt(s.week52Low)} – ${fmt(s.week52High)}` : `$${fmt(s.week52Low)} – $${fmt(s.week52High)}`) : null)} />
         <StatCard label="PE Ratio" value={s.peRatio} />
         <StatCard label="EPS" value={s.eps} />
         <StatCard label="Forward PE" value={s.forwardPE} />
